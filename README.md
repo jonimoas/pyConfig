@@ -1,12 +1,13 @@
-# pyYML
+# pyConfig
  
-Console based yml file editor
+Console based yml and json file editor
 
 # usage
 
-pyyml path/to/file.yml
+pyconfig path/to/file.yml
 
 navigate through the keys of the file until a leaf is reached. The leaf can be edited
+You can also insert a new field with a value, or a value by itself if in an array.
 
 ![Navigate](/navigate.PNG)
 ![Edit](/edit.PNG)

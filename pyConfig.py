@@ -5,6 +5,8 @@ from asciimatics.screen import Screen
 import sys
 import os
 import yaml
+import json
+import traceback
 from dict_deep import deep_set
 
 filename = ""
@@ -48,16 +50,40 @@ class SelectorFrame(Frame):
 
     def addBack(self):
         self.layout.add_widget(
-            Button("back" if len(path) > 0 else "exit", back))
+            Button("Back" if len(path) > 0 else "Exit", back))
 
     def addSave(self):
-        self.layout.add_widget(Button("save", saveChange))
+        self.layout.add_widget(Button("Save", saveChange))
 
     def textChange(self):
         self.save()
 
+    def addInsert(self):
+        self.layout.add_widget(
+            Button("Insert", insert))
+
+    def addFieldName(self):
+        self.layout.add_widget(
+            Text("New Field Name", "text", self.textChange))
+
+    def addFieldButton(self):
+        self.layout.add_widget(
+            Button("Insert", saveField))
+
+
+def saveField():
+    global frame
+    if len(path) == 0:
+        filecontent[frame.data["text"]] = ""
+        path.append(frame.data["text"])
+    else:
+        path.append(frame.data["text"])
+        deep_set(filecontent, path, "")
+    createButtonCallback(frame.data["text"])()
+
 
 def saveChange():
+    global frame
     global path
     global filecontent
     global filename
@@ -69,7 +95,10 @@ def saveChange():
     else:
         deep_set(filecontent, path[:-1], frame.data["text"])
     with open(filename, 'w') as file:
-        yaml.dump(filecontent, file)
+        if filename.endswith("yml"):
+            yaml.dump(filecontent, file)
+        elif filename.endswith("json"):
+            json.dump(filecontent, file)
     back()
 
 
@@ -84,6 +113,19 @@ def back():
     except:
         path = []
         loop(filecontent)
+
+
+def insert():
+    global path
+    global filecontent
+    global currentcontent
+    currentcontent = filecontent
+    for p in path:
+        currentcontent = currentcontent[p]
+    if isinstance(currentcontent, list):
+        insertValue()
+    elif isinstance(currentcontent, dict):
+        insertField()
 
 
 def createButtonCallback(tag):
@@ -115,13 +157,17 @@ def main(wrapperScreen):
         print("No FileName")
         back()
     filename = sys.argv[1]
-    if filename.endswith("yml"):
-        with open(filename) as file:
-            filecontent = yaml.load(file, Loader=yaml.FullLoader)
-            currentcontent = filecontent
-            loop(filecontent)
-    else:
-        print("not supported yet")
+    try:
+        if filename.endswith("yml"):
+            with open(filename) as file:
+                filecontent = yaml.load(file, Loader=yaml.FullLoader)
+        elif filename.endswith("json"):
+            with open(filename) as file:
+                filecontent = json.loads(file.read())
+        currentcontent = filecontent
+        loop(filecontent)
+    except:
+        print("error opening file")
         back()
 
 
@@ -145,6 +191,16 @@ def edit(content):
     drawEdit(content)
 
 
+def insertValue():
+    global path
+    path.append("")
+    drawEdit("")
+
+
+def insertField():
+    drawInsertField()
+
+
 def drawButtons(content):
     global screen
     global path
@@ -153,6 +209,7 @@ def drawButtons(content):
     frame.addLabel(str(">".join(path)))
     for c in content:
         frame.addButton(c["label"])
+    frame.addInsert()
     frame.addBack()
     frame.fix()
     screen.play([Scene([frame], -1)])
@@ -168,6 +225,17 @@ def drawEdit(content):
     frame.addLabel(str(">".join(path)))
     frame.addText(content)
     frame.addSave()
+    frame.addBack()
+    frame.fix()
+    screen.play([Scene([frame], -1)])
+
+
+def drawInsertField():
+    global frame
+    frame = SelectorFrame(screen)
+    frame.addLabel(str(">".join(path)))
+    frame.addFieldName()
+    frame.addFieldButton()
     frame.addBack()
     frame.fix()
     screen.play([Scene([frame], -1)])
