@@ -2,12 +2,13 @@
 from asciimatics.widgets import Frame, Layout, Text, Button, Label
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen
+from dict_deep import deep_set, deep_del
 import sys
 import os
 import yaml
 import json
 import traceback
-from dict_deep import deep_set
+
 
 filename = ""
 textContent = ""
@@ -70,6 +71,29 @@ class SelectorFrame(Frame):
         self.layout.add_widget(
             Button("Insert", saveField))
 
+    def addDeleteButton(self):
+        self.layout.add_widget(
+            Button("Delete", deleteField))
+
+
+def deleteField():
+    global filecontent
+    global path
+    content = filecontent
+    for p in path[:-2]:
+        content = content[p]
+    if isinstance(content[path[-2]], list):
+        print(str(path[-1]))
+        print(content[path[-2]])
+        print(path[:-2])
+        deep_set(filecontent, path[:-1],
+                 [x for x in content[path[-2]] if str(x) != str(path[-1])])
+    elif isinstance(content, dict):
+        deep_del(filecontent, path[:-1])
+    saveToFile()
+    path.pop()
+    back()
+
 
 def saveField():
     global frame
@@ -82,11 +106,20 @@ def saveField():
     createButtonCallback(frame.data["text"])()
 
 
+def saveToFile():
+    global filename
+    global filecontent
+    with open(filename, 'w') as file:
+        if filename.endswith("yml"):
+            yaml.dump(filecontent, file)
+        elif filename.endswith("json"):
+            json.dump(filecontent, file)
+
+
 def saveChange():
     global frame
     global path
     global filecontent
-    global filename
     global currentcontent
     if isinstance(currentcontent, list):
         currentcontent = [x for x in currentcontent if x != path[-1]]
@@ -94,11 +127,7 @@ def saveChange():
         deep_set(filecontent, path[:-1], currentcontent)
     else:
         deep_set(filecontent, path[:-1], frame.data["text"])
-    with open(filename, 'w') as file:
-        if filename.endswith("yml"):
-            yaml.dump(filecontent, file)
-        elif filename.endswith("json"):
-            json.dump(filecontent, file)
+    saveToFile()
     back()
 
 
@@ -209,7 +238,8 @@ def drawButtons(content):
     frame.addLabel(str(">".join(path)))
     for c in content:
         frame.addButton(c["label"])
-    frame.addInsert()
+    if isinstance(currentcontent, list) or isinstance(currentcontent, dict):
+        frame.addInsert()
     frame.addBack()
     frame.fix()
     screen.play([Scene([frame], -1)])
@@ -224,6 +254,7 @@ def drawEdit(content):
     frame = SelectorFrame(screen)
     frame.addLabel(str(">".join(path)))
     frame.addText(content)
+    frame.addDeleteButton()
     frame.addSave()
     frame.addBack()
     frame.fix()
