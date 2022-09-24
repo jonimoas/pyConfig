@@ -1,6 +1,6 @@
 # pyConfig
  
-Console based yml and json file editor
+Console based yml, xml and json file editor
 
 # usage
 
@@ -20,3 +20,4 @@ The following libraries were used:
     asciimatics    - https://github.com/peterbrittain/asciimatics
     dict_deep      - https://github.com/mbello/dict-deep
     PyYAML         - https://github.com/yaml/pyyaml
+    xmltodict      - https://github.com/martinblech/xmltodict

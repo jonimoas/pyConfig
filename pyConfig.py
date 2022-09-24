@@ -2,6 +2,8 @@
 from asciimatics.widgets import Frame, Layout, Text, Button, Label
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen
+from xmltodict import parse, unparse
+
 from dict_deep import deep_set, deep_del
 import sys
 import os
@@ -114,6 +116,8 @@ def saveToFile():
             yaml.dump(filecontent, file)
         elif filename.endswith("json"):
             json.dump(filecontent, file)
+        elif filename.endswith("xml"):
+            file.write(unparse(filecontent))
 
 
 def saveChange():
@@ -193,10 +197,14 @@ def main(wrapperScreen):
         elif filename.endswith("json"):
             with open(filename) as file:
                 filecontent = json.loads(file.read())
+        elif filename.endswith("xml"):
+            with open(filename, encoding='utf-8') as file:
+                filecontent = parse(file.read())
         currentcontent = filecontent
         loop(filecontent)
-    except:
+    except Exception as e:
         print("error opening file")
+        print(e)
         back()
 
 
